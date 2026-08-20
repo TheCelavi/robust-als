@@ -1,0 +1,2 @@
+model,ndcg@5,precision@5,recall@5,coverage@5,ndcg@10,precision@10,recall@10,coverage@10,ndcg@20,precision@20,recall@20,coverage@20
+robust_no_removal,0.0469 ± 0.0272,0.0303 ± 0.0194,0.0422 ± 0.0282,0.0083 ± 0.0010,0.0510 ± 0.0300,0.0249 ± 0.0157,0.0634 ± 0.0406,0.0133 ± 0.0015,0.0612 ± 0.0323,0.0201 ± 0.0116,0.0987 ± 0.0494,0.0226 ± 0.0025
