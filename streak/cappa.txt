@@ -1,0 +1,42 @@
+Total streaks: 300
+
+INTER-RATER AGREEMENT
+Raw agreement: 0.8267
+95% CI: [0.7798, 0.8653]
+Cohen's kappa: 0.7292
+
+Validators confusion matrix:
+          Expected  Outlier  Unknown
+Expected        98        3       11
+Outlier          1      112       19
+Unknown          3       15       38
+qt.qpa.plugin: Could not find the Qt platform plugin "wayland" in ""
+
+AGREEMENT BY HEURISTIC CATEGORY
+Expected: 96/100, agreement=0.960, 95% CI=[0.902, 0.984]
+Outlier: 92/100, agreement=0.920, 95% CI=[0.850, 0.959]
+Unknown: 60/100, agreement=0.600, 95% CI=[0.502, 0.691]
+
+CONSENSUS
+Agreed cases: 248/300
+
+HEURISTIC VS HUMAN CONSENSUS
+human_label  Expected  Outlier  Unknown
+heuristic
+Expected           96        0        0
+Outlier             0       92        0
+Unknown             2       20       38
+Expected: 96/96 (1.000), 95% CI=[0.962, 1.000]
+Outlier: 92/92 (1.000), 95% CI=[0.960, 1.000]
+Unknown: 38/60 (0.633), 95% CI=[0.507, 0.744]
+
+BINARY HEURISTIC COMPARISON
+Evaluated cases: 188
+              precision    recall  f1-score   support
+
+     Outlier       1.00      1.00      1.00        92
+    Expected       1.00      1.00      1.00        96
+
+    accuracy                           1.00       188
+   macro avg       1.00      1.00      1.00       188
+weighted avg       1.00      1.00      1.00       188

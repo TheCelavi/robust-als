@@ -1,0 +1,10 @@
+metric,value
+n_unknown,652.0
+mean_trust,0.7063098164955567
+median_trust,0.89936621251521
+pct_trust_below_0_1,12.423312883435583
+pct_trust_between_0_1_and_0_9,37.576687116564415
+pct_trust_above_0_9,50.0
+mean_seed_sd,0.006183560755489389
+median_seed_sd,0.0025633873647308283
+p95_seed_sd,0.02320289757698146

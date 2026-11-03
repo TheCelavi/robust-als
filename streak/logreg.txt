@@ -1,0 +1,25 @@
+ROC AUC: 1.0000
+Precision-Recall AUC: 1.0000
+Accuracy: 1.0000
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00        31
+           1       1.00      1.00      1.00      6103
+
+    accuracy                           1.00      6134
+   macro avg       1.00      1.00      1.00      6134
+weighted avg       1.00      1.00      1.00      6134
+
+
+Brier score: 0.000002
+Log loss: 0.000487
+
+CalibrationDisplay.from_predictions(
+    1 - y_test,
+    1 - probabilities,
+    n_bins=5,
+    strategy="uniform",
+)
+
+plt.title("Calibration of Outlier Probabilities")
+plt.show()

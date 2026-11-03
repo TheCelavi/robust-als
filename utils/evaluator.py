@@ -63,7 +63,7 @@ class Evaluator:
         return results
 
     @staticmethod
-    def __hitrate(prediction, actual, k):
+    def __hitrate(actual, predicted, k):
         """
         Compute Hit Rate@k metric.
         """
@@ -73,7 +73,7 @@ class Evaluator:
         if 0 == len(actual_set):
             return 0
 
-        top_k = prediction[:k]
+        top_k = predicted[:k]
 
         return int(any(item in actual_set for item in top_k))
 
