@@ -53,8 +53,11 @@ except FileNotFoundError:
     dataset_df = load_dataset()
     dataset_df = dataset_df[
         dataset_df["date"] < TRAIN_EVALUATE_SPLITS["week_1"]["evaluate_from"]
-    ]
+        ]
     df = build_streaks(dataset_df)
+    df = df.sort_values(
+        by=["min_date", "max_date", "user_id"]
+    )
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     with open(cache_path, "wb") as f:
         pickle.dump(df, f)
@@ -62,28 +65,29 @@ except FileNotFoundError:
 # Pseudo labeling: 0 = outlier, 1 = expected, NaN = unknown.
 rules = LOGREG_HEURISTIC_RULES
 outlier = (
-    (df["max_consumed_hours_day_streak"] >= rules["outliers"]["max_consumed_hours_day_streak"])
-    | (
-        (df["average_consumed_hours_day_streak"] >= rules["outliers"]["average_consumed_hours_day_streak"])
-        & (df["streak_duration"] >= rules["min_duration_for_average"])
-    )
-    | (df["bookmarked_per_day_streak"] >= rules["outliers"]["bookmarked_per_day_streak"])
-    | (df["liked_per_day_streak"] >= rules["outliers"]["liked_per_day_streak"])
+        (df["max_consumed_hours_day_streak"] >= rules["outliers"]["max_consumed_hours_day_streak"])
+        | (
+                (df["average_consumed_hours_day_streak"] >= rules["outliers"]["average_consumed_hours_day_streak"])
+                & (df["streak_duration"] >= rules["min_duration_for_average"])
+        )
+        | (df["bookmarked_per_day_streak"] >= rules["outliers"]["bookmarked_per_day_streak"])
+        | (df["liked_per_day_streak"] >= rules["outliers"]["liked_per_day_streak"])
 )
 expected = (
-    (df["max_consumed_hours_day_streak"] <= rules["expected"]["max_consumed_hours_day_streak"])
-    & (
-        (
-            (df["average_consumed_hours_day_streak"] <= rules["expected"]["average_consumed_hours_day_streak"])
-            & (df["streak_duration"] >= rules["min_duration_for_average"])
+        (df["max_consumed_hours_day_streak"] <= rules["expected"]["max_consumed_hours_day_streak"])
+        & (
+                (
+                        (df["average_consumed_hours_day_streak"] <= rules["expected"][
+                            "average_consumed_hours_day_streak"])
+                        & (df["streak_duration"] >= rules["min_duration_for_average"])
+                )
+                | (
+                        (df["average_consumed_hours_day_streak"] <= rules["expected"]["max_consumed_hours_day_streak"])
+                        & (df["streak_duration"] == 1)
+                )
         )
-        | (
-            (df["average_consumed_hours_day_streak"] <= rules["expected"]["max_consumed_hours_day_streak"])
-            & (df["streak_duration"] == 1)
-        )
-    )
-    & (df["bookmarked_per_day_streak"] <= rules["expected"]["bookmarked_per_day_streak"])
-    & (df["liked_per_day_streak"] <= rules["expected"]["bookmarked_per_day_streak"])
+        & (df["bookmarked_per_day_streak"] <= rules["expected"]["bookmarked_per_day_streak"])
+        & (df["liked_per_day_streak"] <= rules["expected"]["bookmarked_per_day_streak"])
 )
 df = df.copy()
 df["trust"] = np.select([outlier, expected], [0, 1], default=np.nan)
@@ -92,7 +96,7 @@ df["trust"] = np.select([outlier, expected], [0, 1], default=np.nan)
 unknown_df = df.loc[df["trust"].isna()].copy()
 labeled_df = df.loc[df["trust"].notna()].copy()
 labeled_df["trust"] = labeled_df["trust"].astype(int)
-print(f"Labeled streaks: {len(labeled_df):,}; unknown streaks: {len(unknown_df):,}")
+print(f"Labeled streaks: {len(labeled_df):,}; Unknown streaks: {len(unknown_df):,}")
 
 features = LOGREG_FEATURES
 x = labeled_df[features]
@@ -122,14 +126,16 @@ plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/confusion_matrix.png", dpi=200)
 plt.close()
 
-CalibrationDisplay.from_predictions(y_test, probabilities, n_bins=5, strategy="uniform")
-plt.title("Calibration: expected probabilities")
+dsp_exp = CalibrationDisplay.from_predictions(y_test, probabilities, n_bins=5, strategy="uniform")
+dsp_exp.line_.set_linestyle("None")
+plt.title("Calibration: Expected probabilities")
 plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/calibration_expected.png", dpi=200)
 plt.close()
 
-CalibrationDisplay.from_predictions(1 - y_test, 1 - probabilities, n_bins=5, strategy="uniform")
-plt.title("Calibration: outlier probabilities")
+dsp_out = CalibrationDisplay.from_predictions(1 - y_test, 1 - probabilities, n_bins=5, strategy="uniform")
+dsp_out.line_.set_linestyle("None")
+plt.title("Calibration: Outlier probabilities")
 plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/calibration_outlier.png", dpi=200)
 plt.close()
@@ -143,9 +149,9 @@ for p, v in zip([0, 5, 25, 50, 75, 95, 100], np.percentile(trust_scores, [0, 5, 
 
 plt.figure(figsize=(8, 5))
 plt.hist(trust_scores, bins=np.linspace(0, 1, 31), edgecolor="black")
-plt.xlabel("Predicted trust score P(expected)")
-plt.ylabel("Number of unknown streaks")
-plt.title("Trust scores for unknown streaks")
+plt.xlabel("Predicted trust score P(Expected)")
+plt.ylabel("Number of Unknown streaks")
+plt.title("Trust scores for Unknown streaks")
 plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/unknown_trust_histogram.png", dpi=200)
 plt.close()
@@ -162,7 +168,7 @@ score_runs = np.asarray(score_runs)  # shape: (10, n_unknown)
 score_mean = score_runs.mean(axis=0)
 score_sd = score_runs.std(axis=0, ddof=1)
 score_range = score_runs.max(axis=0) - score_runs.min(axis=0)
-print("\nAcross-seed stability of unknown trust scores:")
+print("\nAcross-seed stability of Unknown trust scores:")
 print(f"  Mean per-streak SD: {score_sd.mean():.6f}")
 print(f"  Median per-streak SD: {np.median(score_sd):.6f}")
 print(f"  95th percentile SD: {np.percentile(score_sd, 95):.6f}")
@@ -171,8 +177,8 @@ print(f"  Mean per-streak range: {score_range.mean():.6f}")
 plt.figure(figsize=(8, 5))
 plt.hist(score_sd, bins=30, edgecolor="black")
 plt.xlabel("SD of predicted trust scores across 10 random seeds")
-plt.ylabel("Number of unknown streaks")
-plt.title("Prediction stability on unknown streaks")
+plt.ylabel("Number of Unknown streaks")
+plt.title("Prediction stability on Unknown streaks")
 plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/unknown_trust_stability.png", dpi=200)
 plt.close()
